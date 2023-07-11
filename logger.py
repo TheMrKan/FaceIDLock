@@ -3,9 +3,13 @@ import os
 import datetime
 import sys
 
-import cfg
 
 debug = os.name != "posix"
+
+if debug:
+    from debug import debug_cfg as cfg
+else:
+    from rpi import rpi_cfg as cfg
 
 logger = logging.getLogger("test")
 

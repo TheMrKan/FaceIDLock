@@ -6,7 +6,6 @@ import asyncio
 import os
 import users
 from logger import logger
-import cfg
 
 debug = os.name != "posix"
 debug_captures = (0,)
@@ -15,12 +14,14 @@ debug_captures = (0,)
 
 if debug:
     logger.debug("Debug is enabled. Importing debug implementations...")
-    import debug_lock_controller as lock_controller
-    import debug_screen as screen
+    from debug import debug_lock_controller as lock_controller
+    from debug import debug_screen as screen
+    from debug import debug_cfg as cfg
 else:
     logger.info("Debug is disabled. Importing production implementations...")
-    import rpi_lock_controller as lock_controller
-    import rpi_screen as screen
+    from rpi import rpi_lock_controller as lock_controller
+    from rpi import rpi_screen as screen
+    from rpi import rpi_cfg as cfg
 
 
 # setup cameras
