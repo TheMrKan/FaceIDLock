@@ -152,7 +152,8 @@ async def detector_thread():
                 try:
                     active_users = user_manager.get_all_active_users()
                     encoding = recognizer.get_face_encoding(frame, (face,))
-                    #cv2.imwrite("test1.png", frame)
+                    if cfg.SAVE_RECOG_IMAGE:
+                        cv2.imwrite(cfg.SAVE_RECOG_IMAGE, frame)
                     matching_index = recognizer.get_matching_encoding_index(encoding, [u.encoding for u in active_users])
 
                     if matching_index == -1:
