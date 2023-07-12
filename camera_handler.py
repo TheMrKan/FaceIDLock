@@ -6,6 +6,7 @@ import asyncio
 import os
 import users
 from logger import logger
+import datetime
 
 debug = os.name != "posix"
 debug_captures = (0,)
@@ -163,6 +164,12 @@ async def detector_thread():
                         logger.debug(f"Detected user: {user}")
                         if user.can_enter():
                             result = True
+
+                            if cfg.SAVE_USER_IMAGE:
+                                p = os.path.join(cfg.SAVE_USER_IMAGE,
+                                                 f"{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}_{user}.png")
+                                img = cv2.rectangle(frame, (face[3], face[0]), (face[1], face[2]), (0, 255, 0), 2)
+                                cv2.imwrite(p, img)
                         else:
                             logger.debug("Access granted, but lock won't be opened because of row limit")
                             result = False
