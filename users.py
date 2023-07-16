@@ -209,7 +209,7 @@ class UserManager:
                 if change.user_data is None:
                     raise ValueError("User data cannot be None")
                 await self.add_user(change.related_user_id, change.user_data.name, encoding=change.user_data.encoding)
-            elif change.action ==  "remove":
+            elif change.action == "delete":
                 self.remove_user(change.related_user_id, False)
             else:
                 raise NotImplementedError(f"Change action {change.action} is not implemented")

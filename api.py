@@ -6,6 +6,7 @@ import aiohttp
 from typing import Any
 from dataclasses import dataclass
 import json
+import asyncio
 
 
 class APIError(Exception):
@@ -95,3 +96,9 @@ async def request_updates(url: str) -> list[RemoteChange]:
                 return []
             return [RemoteChange(raw) for raw in json.loads(raw_changes)]
 
+
+async def debug_main():
+    await request_updates("http://127.0.0.1:8000")
+
+if __name__ == "__main__":
+    asyncio.run(debug_main())

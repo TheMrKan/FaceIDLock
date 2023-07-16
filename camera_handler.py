@@ -38,6 +38,8 @@ class Capture:
 
     CAPTURING_INTERVAL = .1
 
+    first_detection_params: dict
+
     def __init__(self, index, source):
         self.index = index
         self._source = source
@@ -75,7 +77,7 @@ class Capture:
 
     def stop_capturing(self):
         self._is_running = False
-        self.source.release()
+        self._source.release()
 
 
 def get_available_captures() -> list[Capture]:
@@ -153,8 +155,7 @@ async def detector_thread():
                 try:
                     active_users = user_manager.get_all_active_users()
                     encoding = recognizer.get_face_encoding(frame, (face,))
-                    if cfg.SAVE_RECOG_IMAGE:
-                        cv2.imwrite(cfg.SAVE_RECOG_IMAGE, frame)
+
                     matching_index = recognizer.get_matching_encoding_index(encoding, [u.encoding for u in active_users])
 
                     if matching_index == -1:
@@ -175,9 +176,9 @@ async def detector_thread():
                             result = False
                             show_denied = False
                         user.track_opening()
-                except face_detection.NoFacesDetectedException:
+                except Exception as ex:
                     result = False
-                    logger.error(f"Failed to identify faces from camera {capture.index}")
+                    logger.error(f"Failed to identify faces from camera {capture.index}", exc_info=ex)
 
                 if result:
                     logger.info(f"Access granted")

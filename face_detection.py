@@ -1,6 +1,7 @@
 import face_recognition as recog
 import cv2
 import numpy
+from debug import debug_cfg
 
 import users
 
@@ -14,7 +15,10 @@ class Recognizer:
     def __init__(self):
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
-    def get_face_encoding(self, image: numpy.ndarray, bounds: tuple[int, int, int, int] = None) -> list[float]:
+    def get_face_encoding(self, image: numpy.ndarray, bounds: list[tuple[int, int, int, int]] = None) -> list[float]:
+        if debug_cfg.SAVE_RECOG_IMAGE:
+            img = cv2.rectangle(image, (bounds[0][3], bounds[0][0]), (bounds[0][1], bounds[0][2]), (0, 255, 0), 2)
+            cv2.imwrite(debug_cfg.SAVE_RECOG_IMAGE, img)
         encodings = recog.face_encodings(image, known_face_locations=bounds)
         if not encodings:
             raise NoFacesDetectedException
@@ -46,47 +50,5 @@ class Recognizer:
         except ValueError:
             return -1
 
-
-class Detector:
-
-    faces = []
-    image = None
-
-    def __init__(self, image):
-        self.image = self.gray = image
-        #self.gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    def detect(self) -> int:
-
-        self.faces = faceCascade.detectMultiScale(
-                self.gray,
-                scaleFactor=1.4,
-                minNeighbors=3,
-                minSize=(30, 30)
-        )
-
-        return len(self.faces)
-
-    def get_first_face(self):
-        if len(self.faces) == 0:
-            raise NoFacesDetectedException
-
-        x, y, w, h = self.faces[0]
-        x0, x1 = max(0, x - 80), min(self.image.shape[1], x + w + 80)
-        y0, y1 = max(0, y - 80), min(self.image.shape[0], y + h + 80)
-        face = self.image[y0:y1, x0:x1]
-        return face
-
-    def identify_face(self, repository: users.UserManager) -> bool:
-        try:
-            target_face_encoding = recog.face_encodings(self.image)[0]
-        except IndexError:
-            raise NoFacesDetectedException
-
-        print("Identifying face...")
-
-        results = recog.compare_faces(repository.get_faces(), target_face_encoding)
-        print(f"Identifying result: {any(results)}")
-        return any(results)
 
 
