@@ -7,6 +7,7 @@ import os
 import users
 from logger import logger
 import datetime
+import time
 
 debug = os.name != "posix"
 debug_captures = (0,)
@@ -147,15 +148,18 @@ async def detector_thread():
             frame = capture.get_if_updated()
             if frame is None:
                 continue
+            #p1 = time.time()
             face = recognizer.find_face(frame)
+            #print("First time:", time.time()- p1)
             if face is not None:
                 logger.info(f"Detected face on camera {capture.index}. Analizing...")
                 #screen.recognizing()
                 show_denied = True
                 try:
                     active_users = user_manager.get_all_active_users()
+                    #p2 = time.time()
                     encoding = recognizer.get_face_encoding(frame, (face,))
-
+                    #print("Second time:", time.time()- p2)
                     matching_index = recognizer.get_matching_encoding_index(encoding, [u.encoding for u in active_users])
 
                     if matching_index == -1:
@@ -188,11 +192,11 @@ async def detector_thread():
                     logger.info(f"Access denied")
                     if show_denied:
                         screen.denied()
-                    await asyncio.sleep(3)
+                        await asyncio.sleep(1)
                 screen.idle()
-                await asyncio.sleep(2)
+        await asyncio.sleep(0.05)
 
-        await asyncio.sleep(0.2)
+        
 
     """
     wait = 0
