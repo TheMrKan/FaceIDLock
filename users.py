@@ -10,6 +10,12 @@ import json
 import aiofiles
 import cv2
 
+debug = os.name != "posix"
+if debug:
+    from debug import debug_cfg as cfg
+else:
+    from rpi import rpi_cfg as cfg
+
 
 class User:
     MAX_OPENINGS_IN_ROW = 3
@@ -38,11 +44,21 @@ class User:
         if self.last_opening is not None and (datetime.datetime.now() - self.last_opening).seconds > User.ROW_BREAK_SECONDS:
             self.pre_lock_counter = 0
 
-    def track_opening(self):
+    def track_opening_attempt(self):
         if self.pre_lock_counter + 1 <= User.MAX_OPENINGS_IN_ROW:
             self.pre_lock_counter += 1
 
         self.last_opening = datetime.datetime.now()
+
+    def track_opening(self, direction: bool):
+        """
+        :param direction: False - for entering; True - for exiting
+        """
+        # send notification to the server
+        if not self.is_local:
+            asyncio.ensure_future(api.send_opening(cfg.OPENING_EVENT_URL, self.user_id, direction))
+
+        logger.info(f"User {self} {'left' if direction else 'entered'}")
 
     def can_enter(self) -> bool:
         if not self.is_active:

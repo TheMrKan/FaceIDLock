@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import datetime
+
 import requests
 import base64
 import numpy
@@ -51,7 +54,6 @@ class RemoteChange:
             self.parsing_error = ex
 
 
-
 async def request_users(url: str) -> list[RemoteUserData]:
     async with aiohttp.ClientSession() as aio_session:
         async with aio_session.get(url) as response:
@@ -81,24 +83,41 @@ async def request_updates(url: str) -> list[RemoteChange]:
                 raise await APIError.from_response("Failed status code", response)
             
             data = await response.json()
-            #with open("response.txt","r") as f:
-                #data = json.loads(f.read())
 
             result = data.get("result", None)
             if result is None:
                 raise await APIError.from_response("Invalid response", response)
             elif result == "error, no users found":
                 return []
-            #with open("response.txt","w") as f:
-               #f.write(await response.text())
+
             raw_changes = data.get("clients", None)
             if raw_changes is None:
                 return []
             return [RemoteChange(raw) for raw in json.loads(raw_changes)]
 
 
+async def send_opening(url: str, user_id: int, direction: bool, time: [datetime.datetime, None] = None):
+    """
+    :param direction: False - for entering; True - for exiting
+    :param time: Time of opening. Defaults to the current time.
+    """
+
+    data = {
+        "type": "enter_event",
+        "id": str(user_id),
+        "date": (time or datetime.datetime.now()).strftime("%Y-%m-%d %H:%M"),
+        "type_event": str(direction+1)    # API backend expects '1' for entering event and '2' for exiting
+    }
+
+    async with aiohttp.ClientSession() as aio_session:
+        async with aio_session.post(url, data=data) as response:
+            if response.status != 200:
+                raise await APIError.from_response("Failed status code", response)
+
+
 async def debug_main():
-    await request_updates("http://127.0.0.1:8000")
+    #await request_updates("http://127.0.0.1:8000")
+    await send_opening("https://fitnessneo.ru/add-event/", 5, True)
 
 if __name__ == "__main__":
     asyncio.run(debug_main())

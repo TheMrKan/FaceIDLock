@@ -31,6 +31,7 @@ else:
 class Capture:
     current_frame: [numpy.ndarray, None]
     index: int
+    direction: bool    # False - for entering; True - for exiting
 
     _source: cv2.VideoCapture
     _task: asyncio.Task
@@ -46,6 +47,8 @@ class Capture:
         self._source = source
         self.current_frame = None
         self._is_updated = False
+
+        self.direction = self.index in cfg.EXIT_CAMERAS
 
     def get_if_updated(self) -> [numpy.ndarray, None]:
         if self._is_updated:
@@ -169,7 +172,7 @@ async def detector_thread():
                         logger.debug(f"Detected user: {user}")
                         if user.can_enter():
                             result = True
-
+                            user.track_opening(capture.direction)
                             if cfg.SAVE_USER_IMAGE:
                                 p = os.path.join(cfg.SAVE_USER_IMAGE,
                                                  f"{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}_{user}.png")
@@ -179,7 +182,7 @@ async def detector_thread():
                             logger.debug("Access granted, but lock won't be opened because of row limit")
                             result = False
                             show_denied = False
-                        user.track_opening()
+                        user.track_opening_attempt()
                 except Exception as ex:
                     result = False
                     logger.error(f"Failed to identify faces from camera {capture.index}", exc_info=ex)
@@ -196,162 +199,8 @@ async def detector_thread():
                 screen.idle()
         await asyncio.sleep(0.05)
 
-        
-
-    """
-    wait = 0
-    isWaiting = False
-    lastUpdate = time.time()
-    wasFoundPreviousFrame = False
-
-    previousCam = 0
-
-    #counter = 0
-    while True:
-        #print(f"save {counter}")
-        #cv2.imwrite(f"test_{counter}.png", capturedFrame)
-        #counter += 1
-
-        #while not wasUpdated:
-        #await asyncio.sleep(0.1)
-
-        if not wasUpdated:
-            await asyncio.sleep(0.1)
-            continue
-
-        if not isWaiting:
-            previousCam = not previousCam
-
-        if previousCam:
-            frame = capturedFrame1
-            cv2.imwrite(f"cam1.png", frame)
-        else:
-            frame = capturedFrame
-
-        detector = face_detection.Detector(frame)
-        faces = detector.detect()
-        if isWaiting:
-            if faces > 0:
-                if wasFoundPreviousFrame:
-                    cv2.imwrite(f"found_{counter}.png", frame)
-                    wasFoundPreviousFrame = False
-                wait -= time.time() - lastUpdate
-                if wait <= 0:
-                    print("Recognize")
-                    screen.recognizing()
-                    face = detector.get_first_face()
-                    cv2.imwrite("example_out.jpg", face)
-                    rv, img = cv2.imencode(".png", face)
-                    result = api.request_confirmation(img)
-                    if result:
-                        print("SUCCESS")
-                        screen.granted()
-                        await lock_controller.open_for_seconds(5)
-                        #ret, capturedFrame = cap.read()
-                        wait = 5
-                    else:
-                        print("NOT RECOGNIZED")
-                        screen.denied()
-                        await asyncio.sleep(3)
-                        #ret, capturedFrame = cap.read()
-                        wait = 5
-                    wasFoundPreviousFrame = True
-                    screen.idle()
-                    isWaiting = False
-                else:
-                    wasFoundPreviousFrame = False
-                    print(f"Recognizing in {wait:.1f} seconds")
-                    screen.waiting(wait)
-            else:
-                wasFoundPreviousFrame = False
-                print("You left the detection zone")
-                screen.idle()
-                isWaiting = False
-                wait = 0
-
-        else:
-            if faces > 0:
-                print("New face detected. Recognizing in 3 seconds")
-                wait = 0
-                isWaiting = True
-
-        lastUpdate = time.time()
-        wasUpdated = False
-
-        await asyncio.sleep(0.1)
-        """
-
 
 async def main():
     await asyncio.gather(detector_thread(), *[capture.start_capturing() for capture in captures])
 
 asyncio.run(main())
-
-
-'''while True:
-    try:
-        ret, frame = cap.read()
-        #frame = cv2.resize(frame, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
-        #frame = cv2.imread("example.jpg")
-        #cv2.imwrite(f"ex_out_0_{counter}.png", frame)
-        #cv2.imwrite(f"ex_out_1_{counter}.png", frame1)
-        #time.sleep(0.5)
-        #counter += 1
-        #if counter > 100:
-        #    break
-        counter += 1
-        detector = face_detection.Detector(frame)
-        faces = detector.detect()
-        if isWaiting:
-            if faces > 0:
-                if wasFoundPreviousFrame:
-                    cv2.imwrite(f"found_{counter}.png", frame)
-                wait -= time.time() - lastUpdate
-                if wait <= 0:
-                    print("Recognize")
-                    screen.recognizing()
-                    face = detector.get_first_face()
-                    cv2.imwrite("example_out.jpg", face)
-                    rv, img = cv2.imencode(".png", face)
-                    result = api.request_confirmation(img)
-                    if result:
-                        print("SUCCESS")
-                        screen.granted()
-                        lock_controller.open_for_seconds(5)
-                        
-                        wait = 10
-                    else:
-                        print("NOT RECOGNIZED")
-                        screen.denied()
-                        time.sleep(3)
-                        wait = 1
-                    wasFoundPreviousFrame = True
-                    screen.idle()
-                    isWaiting = False
-                else:
-                    wasFoundPreviousFrame = False
-                    print(f"Recognizing in {wait:.1f} seconds")
-                    screen.waiting(wait)
-            else:
-                wasFoundPreviousFrame = False
-                print("You left the detection zone")
-                screen.idle()
-                isWaiting = False
-                wait = 1
-
-        else:
-            if faces > 0:
-                print("New face detected. Recognizing in 3 seconds")
-                wait = 1
-                isWaiting = True
-
-        lastUpdate = time.time()
-    except KeyboardInterrupt:
-        break
-    except:
-        traceback.print_exc()
-    time.sleep(0.2)
-'''
-
-#cap.release()
-#cv2.destroyAllWindows()
