@@ -5,4 +5,6 @@ OPENING_EVENT_URL = "https://fitnessneo.ru/add-event/"
 LOGS_PATH = "/var/recog/logs"
 SAVE_RECOG_IMAGE = "recog.png"
 SAVE_USER_IMAGE = ""
+DISPLAY_WIDTH = 800
+DISPLAY_HEIGHT = 480
 EXIT_CAMERAS = (1, )

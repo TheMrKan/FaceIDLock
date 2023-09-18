@@ -18,12 +18,10 @@ debug_captures = (0,)
 if debug:
     logger.debug("Debug is enabled. Importing debug implementations...")
     from debug import debug_lock_controller as lock_controller
-    from debug import debug_screen as screen
     from debug import debug_cfg as cfg
 else:
     logger.info("Debug is disabled. Importing production implementations...")
     from rpi import rpi_lock_controller as lock_controller
-    from rpi import rpi_screen as screen
     from rpi import rpi_cfg as cfg
 
 
@@ -134,9 +132,6 @@ user_manager = users.UserManager(path, cfg.INIT_URL, cfg.UPDATE_URL, recognizer)
 
 logger.info("Initialization completed")
 
-screen.idle()
-
-
 async def init_user_manager_remotes():
     await asyncio.create_task(user_manager.load_remote_users())
     user_manager.start_synchronization()
@@ -199,14 +194,11 @@ async def detector_thread():
 
                 if result:
                     logger.info(f"Access granted")
-                    screen.granted()
                     await lock_controller.open_for_seconds(3)
                 else:
                     logger.info(f"Access denied")
                     if show_denied:
-                        screen.denied()
                         await asyncio.sleep(1)
-                screen.idle()
         await asyncio.sleep(0.05)
 
 
