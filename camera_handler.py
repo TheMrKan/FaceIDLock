@@ -8,6 +8,7 @@ import users
 from logger import logger
 import datetime
 import time
+import display
 
 debug = os.name != "posix"
 debug_captures = (0,)
@@ -38,7 +39,7 @@ class Capture:
     _is_running: bool
     _is_updated: bool
 
-    CAPTURING_INTERVAL = .1
+    CAPTURING_INTERVAL = .01
 
     first_detection_params: dict
 
@@ -50,15 +51,17 @@ class Capture:
 
         self.direction = self.index in cfg.EXIT_CAMERAS
 
-    def get_if_updated(self) -> [numpy.ndarray, None]:
+    def get_if_updated(self, reset_status: bool = True) -> [numpy.ndarray, None]:
         if self._is_updated:
-            self._is_updated = False
+            if reset_status:
+                self._is_updated = False
             return self.current_frame
         return None
 
     def start_capturing(self) -> asyncio.Task:
         self._is_running = True
         self._task = asyncio.create_task(self.capturing_coroutine())
+
         return self._task
 
     async def capturing_coroutine(self):
@@ -69,6 +72,10 @@ class Capture:
                 ret, frame = await asyncio.get_event_loop().run_in_executor(None, self._source.read)
                 if ret:
                     self.current_frame = frame
+
+                    if not self.direction:
+                        display.show_camera_image(frame)
+
                     self._is_updated = True
                 else:
                     logger.error(f"Failed to read image from camera {self.index}: ret is False")
@@ -110,6 +117,9 @@ def get_available_captures_debug() -> list[Capture]:
 
 captures = get_available_captures_debug() if debug else get_available_captures()
 logger.info(f"Found {len(captures)} captures")
+
+# setup display
+display = display.Display()
 
 # setup recognizer
 recognizer = face_detection.Recognizer()
@@ -202,5 +212,7 @@ async def detector_thread():
 
 async def main():
     await asyncio.gather(detector_thread(), *[capture.start_capturing() for capture in captures])
+
+
 
 asyncio.run(main())

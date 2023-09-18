@@ -5,4 +5,4 @@ OPENING_EVENT_URL = "https://fitnessneo.ru/add-event/"
 LOGS_PATH = "logs"
 SAVE_RECOG_IMAGE = "recog.png"
 SAVE_USER_IMAGE = "user_log"
-EXIT_CAMERAS = (1, )
+EXIT_CAMERAS = ()

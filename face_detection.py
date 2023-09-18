@@ -13,7 +13,7 @@ class NoFacesDetectedException(Exception):
 class Recognizer:
 
     def __init__(self):
-        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+        self.face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 
     def get_face_encoding(self, image: numpy.ndarray, bounds: list[tuple[int, int, int, int]] = None) -> list[float]:
         if debug_cfg.SAVE_RECOG_IMAGE:
