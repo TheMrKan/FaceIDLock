@@ -2,12 +2,19 @@ import face_recognition as recog
 import cv2
 import numpy
 from debug import debug_cfg
+import os
 
 import users
 
 
 class NoFacesDetectedException(Exception):
     pass
+
+debug = os.name != "posix"
+if debug:
+    from debug import debug_cfg as cfg
+else:
+    from rpi import rpi_cfg as cfg
 
 
 class Recognizer:
@@ -29,6 +36,7 @@ class Recognizer:
         return self.get_face_encoding(image)
 
     def find_face(self, image: numpy.ndarray):
+
         faces = self.face_cascade.detectMultiScale(
                 image,
                 scaleFactor=1.4,

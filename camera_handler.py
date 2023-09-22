@@ -188,6 +188,12 @@ async def detector_thread():
             frame = capture.get_if_updated()
             if frame is None:
                 continue
+
+            if not capture.direction:
+                cx, cy = int(frame.shape[1] / 2), int(frame.shape[0] / 2)
+                half_rect_size = int(min(frame.shape[0], frame.shape[1]) * cfg.DETECTION_ZONE_SIZE / 2)
+                frame = frame[cy - half_rect_size:cy + half_rect_size, cx - half_rect_size:cx + half_rect_size]
+
             #p1 = time.time()
             face = recognizer.find_face(frame)
             #print("First time:", time.time()- p1)
