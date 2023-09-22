@@ -31,23 +31,30 @@ class Capture:
     current_frame: [numpy.ndarray, None]
     index: int
     direction: bool    # False - for entering; True - for exiting
+    delay: float
+
 
     _source: cv2.VideoCapture
     _task: asyncio.Task
     _is_running: bool
     _is_updated: bool
+    _delay_started: datetime.datetime | None
 
     CAPTURING_INTERVAL = .01
-
-    first_detection_params: dict
 
     def __init__(self, index, source):
         self.index = index
         self._source = source
         self.current_frame = None
         self._is_updated = False
+        self.display_released = False
 
         self.direction = self.index in cfg.EXIT_CAMERAS
+        if self.index < len(cfg.DELAYS):
+            self.delay = cfg.DELAYS[self.index]
+        else:
+            self.delay = 0
+        self._delay_started = None
 
     def get_if_updated(self, reset_status: bool = True) -> [numpy.ndarray, None]:
         if self._is_updated:
@@ -72,6 +79,13 @@ class Capture:
                     self.current_frame = frame
 
                     if not self.direction:
+
+                        if not self.display_released:
+                            if self.is_waiting:
+                                display.show_idle((datetime.datetime.now() - self._delay_started).total_seconds() / self.delay)
+                            else:
+                                display.show_idle(0)
+
                         display.show_camera_image(frame)
 
                     self._is_updated = True
@@ -87,6 +101,24 @@ class Capture:
     def stop_capturing(self):
         self._is_running = False
         self._source.release()
+
+    def start_waiting(self):
+        if self.delay > 0:
+            self._delay_started = datetime.datetime.now()
+
+    def stop_waiting(self):
+        self._delay_started = None
+
+    @property
+    def is_waiting(self) -> bool:
+        return self._delay_started is not None
+
+    @property
+    def is_delay_elapsed(self) -> bool:
+        if self.delay == 0 or self._delay_started is None:
+            return True
+
+        return (datetime.datetime.now() - self._delay_started).total_seconds() >= self.delay
 
 
 def get_available_captures() -> list[Capture]:
@@ -159,9 +191,23 @@ async def detector_thread():
             #p1 = time.time()
             face = recognizer.find_face(frame)
             #print("First time:", time.time()- p1)
-            if face is not None:
-                logger.info(f"Detected face on camera {capture.index}. Analizing...")
+            if face is None:
+                if capture.is_waiting:
+                    capture.stop_waiting()
+            else:
                 #screen.recognizing()
+
+                if capture.is_waiting:
+                    if capture.is_delay_elapsed:
+                        capture.stop_waiting()
+                    else:
+                        continue
+                else:
+                    capture.start_waiting()
+                    continue
+
+                logger.info(f"Detected face on camera {capture.index}. Analizing...")
+
                 show_denied = True
                 try:
                     active_users = user_manager.get_all_active_users()
@@ -194,11 +240,22 @@ async def detector_thread():
 
                 if result:
                     logger.info(f"Access granted")
+                    capture.display_released = True
+                    display.show_granted()
                     await lock_controller.open_for_seconds(3)
+                    display.show_idle()
+                    capture.display_released = False
                 else:
                     logger.info(f"Access denied")
                     if show_denied:
+                        capture.display_released = True
+                        display.show_denied()
                         await asyncio.sleep(1)
+                        display.show_idle()
+                        capture.display_released = False
+
+                capture.stop_waiting()
+
         await asyncio.sleep(0.05)
 
 

@@ -14,16 +14,40 @@ else:
 
 class Display:
 
+    DEFAULT_RECT_COLOR = (255, 255, 255)
+    GRANTED_RECT_COLOR = (0, 255, 0)
+    DENIED_RECT_COLOR = (0, 0, 255)
+
     def __init__(self):
         cv2.namedWindow("Display", cv2.WINDOW_NORMAL)
         cv2.setWindowProperty("Display", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.moveWindow("Display", 0, 0)
 
-        self.timer = 0
+        self.rect_color = self.DEFAULT_RECT_COLOR
+        self.filling = 1
+        self.current_frame = None
 
         self.tk = tkinter.Tk()
 
-    def draw_dashed_line(self, frame, p0, p1, thickness, color, dashes, dash_length):
+    def show_granted(self, refresh: bool = True):
+        self.filling = 1
+        self.rect_color = self.GRANTED_RECT_COLOR
+
+        if refresh and self.current_frame is not None:
+            self._refresh_ui()
+
+    def show_idle(self, progress: float = 0):
+        self.filling = progress
+        self.rect_color = self.DEFAULT_RECT_COLOR
+
+    def show_denied(self, refresh: bool = True):
+        self.filling = 1
+        self.rect_color = self.DENIED_RECT_COLOR
+
+        if refresh and self.current_frame is not None:
+            self._refresh_ui()
+
+    def _draw_dashed_line(self, frame, p0, p1, thickness, color, dashes, dash_length):
 
         x0, y0 = p0
         x1, y1 = p1
@@ -46,9 +70,9 @@ class Display:
                 _y1 = _y0 + dash_length
                 cv2.rectangle(frame, (x0 - thickness // 2, _y0), (x1 + thickness // 2, _y1), color=color, thickness=-1)
 
-    def draw_dashed_rect(self, frame, center, size, thickness, color, filling=1):
+    def _draw_dashed_rect(self, frame, center, size, thickness, color, filling=0):
         # 0 <= filling <= 100
-        filling = min(100, max(0, filling))
+        filling = min(1, max(0, filling))
 
         # длина дэша, при которой gap равен 0
         max_length = math.ceil(size / cfg.RECT_LINES)
@@ -57,22 +81,30 @@ class Display:
         x0, y0 = int(center[0] - size / 2), int(center[1] - size / 2)
 
         dash_length = int(cfg.RECT_LINE_MIN + max(filling, 0) * (max_length - cfg.RECT_LINE_MIN) * filling)
-        print(dash_length)
+        #print(dash_length)
 
-        self.draw_dashed_line(frame, (x0, y0), (x0 + size, y0), thickness, color, cfg.RECT_LINES, dash_length)
-        self.draw_dashed_line(frame, (x0, y0 + size), (x0 + size, y0 + size), thickness, color, cfg.RECT_LINES, dash_length)
+        self._draw_dashed_line(frame, (x0, y0), (x0 + size, y0), thickness, color, cfg.RECT_LINES, dash_length)
+        self._draw_dashed_line(frame, (x0, y0 + size), (x0 + size, y0 + size), thickness, color, cfg.RECT_LINES, dash_length)
 
-        self.draw_dashed_line(frame, (x0, y0), (x0, y0 + size), thickness, color, cfg.RECT_LINES, dash_length)
-        self.draw_dashed_line(frame, (x0 + size, y0), (x0 + size, y0 + size), thickness, color, cfg.RECT_LINES, dash_length)
+        self._draw_dashed_line(frame, (x0, y0), (x0, y0 + size), thickness, color, cfg.RECT_LINES, dash_length)
+        self._draw_dashed_line(frame, (x0 + size, y0), (x0 + size, y0 + size), thickness, color, cfg.RECT_LINES, dash_length)
 
         return frame
 
-    def draw_ui(self, frame):
+    def _draw_ui(self, frame):
         h, w = frame.shape[:2]
 
         rect_size = int(min(w, h) * cfg.DETECTION_ZONE_SIZE)
+        self._draw_dashed_rect(frame, (int(w / 2), int(h / 2)), rect_size, 2, self.rect_color, self.filling)
 
-        self.draw_dashed_rect(frame, (int(w / 2), int(h / 2)), rect_size, 2, (255, 255, 255), 0)
+    def _refresh_ui(self):
+        if self.current_frame is None:
+            return
+
+        frame = self.current_frame.copy()
+
+        self._draw_ui(frame)
+        cv2.imshow("Display", frame)
 
     def show_camera_image(self, frame):
 
@@ -89,7 +121,9 @@ class Display:
 
         frame = cv2.flip(frame[int(h / 2 - nh / 2):int(h / 2 + nh / 2), int(w / 2 - nw / 2):int(w / 2 + nw / 2)], 1)
 
-        self.draw_ui(frame)
+        self.current_frame = frame.copy()
+
+        self._draw_ui(frame)
 
         cv2.imshow("Display", frame)
 
