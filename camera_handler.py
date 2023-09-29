@@ -33,12 +33,11 @@ class Capture:
     direction: bool    # False - for entering; True - for exiting
     delay: float
 
-
     _source: cv2.VideoCapture
     _task: asyncio.Task
     _is_running: bool
     _is_updated: bool
-    _delay_started: datetime.datetime | None
+    _delay_started: datetime.datetime
 
     CAPTURING_INTERVAL = .01
 
@@ -48,6 +47,8 @@ class Capture:
         self.current_frame = None
         self._is_updated = False
         self.display_released = False
+
+        source.set(cv2.CAP_PROP_CONVERT_RGB, 1)
 
         self.direction = self.index in cfg.EXIT_CAMERAS
         if self.index < len(cfg.DELAYS):
@@ -121,7 +122,7 @@ class Capture:
         return (datetime.datetime.now() - self._delay_started).total_seconds() >= self.delay
 
 
-def get_available_captures() -> list[Capture]:
+def get_available_captures() -> list:
     index = 0
     arr = []
     while True:
@@ -136,7 +137,7 @@ def get_available_captures() -> list[Capture]:
     return arr
 
 
-def get_available_captures_debug() -> list[Capture]:
+def get_available_captures_debug() -> list:
     arr = []
     for ind in debug_captures:
         cap = cv2.VideoCapture(ind)

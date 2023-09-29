@@ -108,6 +108,7 @@ class Display:
 
     def show_camera_image(self, frame):
 
+        frame = frame.copy()
         h, w = frame.shape[:2]
 
         t_ratio = cfg.DISPLAY_WIDTH / cfg.DISPLAY_HEIGHT
@@ -120,6 +121,8 @@ class Display:
             nh = w / t_ratio
 
         frame = cv2.flip(frame[int(h / 2 - nh / 2):int(h / 2 + nh / 2), int(w / 2 - nw / 2):int(w / 2 + nw / 2)], 1)
+
+        frame = cv2.resize(frame, (cfg.DISPLAY_WIDTH, cfg.DISPLAY_HEIGHT))
 
         self.current_frame = frame.copy()
 

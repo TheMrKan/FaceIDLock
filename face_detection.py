@@ -22,10 +22,11 @@ class Recognizer:
     def __init__(self):
         self.face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 
-    def get_face_encoding(self, image: numpy.ndarray, bounds: list[tuple[int, int, int, int]] = None) -> list[float]:
+    def get_face_encoding(self, image: numpy.ndarray, bounds: list = None):
         if debug_cfg.SAVE_RECOG_IMAGE:
             img = cv2.rectangle(image, (bounds[0][3], bounds[0][0]), (bounds[0][1], bounds[0][2]), (0, 255, 0), 2)
             cv2.imwrite(debug_cfg.SAVE_RECOG_IMAGE, img)
+        print(image.shape)
         encodings = recog.face_encodings(image, known_face_locations=bounds)
         if not encodings:
             raise NoFacesDetectedException
@@ -52,7 +53,7 @@ class Recognizer:
         face = (y0, x1, y1, x0)
         return face
 
-    def get_matching_encoding_index(self, target_encoding: list[float], encodings: list[list[float]]):
+    def get_matching_encoding_index(self, target_encoding: list, encodings: list):
         try:
             return recog.compare_faces(encodings, target_encoding, tolerance=0.5).index(True)
         except ValueError:

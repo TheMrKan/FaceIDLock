@@ -23,14 +23,14 @@ class User:
 
     user_id: int
     name: str
-    encoding: list[float]
+    encoding: list
     is_active: bool
     is_local: bool
 
     pre_lock_counter: int
     last_opening: Union[datetime.datetime, None]
 
-    def __init__(self, user_id: int, name: str, encoding: Union[numpy.ndarray, list[float]], is_active: bool = True, is_local: bool = False):
+    def __init__(self, user_id: int, name: str, encoding: Union[numpy.ndarray, list], is_active: bool = True, is_local: bool = False):
         self.user_id = user_id
         self.name = name
         self.encoding = list(encoding)
@@ -80,10 +80,10 @@ class UserManager:
     SYNC_INTERVAL_SECONDS = 30
 
     local_path: str
-    local_users: list[User]
+    local_users: list
     remote_address_update: str
     remote_address_init: str
-    remote_users: list[User]
+    remote_users: list
 
     recognizer: Any
 
@@ -230,7 +230,7 @@ class UserManager:
             else:
                 raise NotImplementedError(f"Change action {change.action} is not implemented")
 
-    async def add_user(self, user_id: int, name: str, is_local: bool = False, *args, encoding: list[float] = None, image: numpy.ndarray = None):
+    async def add_user(self, user_id: int, name: str, is_local: bool = False, *args, encoding: list = None, image: numpy.ndarray = None):
         users = self.local_users if is_local else self.remote_users
         search = [u for u in users if u.user_id == user_id]
         if search:
