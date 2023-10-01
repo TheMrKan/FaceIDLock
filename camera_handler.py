@@ -190,15 +190,18 @@ async def detector_thread():
             if frame is None:
                 continue
 
+            lims = (0, cfg.DISPLAY_WIDTH, cfg.DISPLAY_HEIGHT, 0)
             if not capture.direction:
                 cx, cy = int(frame.shape[1] / 2), int(frame.shape[0] / 2)
                 half_rect_size = int(min(frame.shape[0], frame.shape[1]) * cfg.DETECTION_ZONE_SIZE / 2)
-                frame = frame[cy - half_rect_size:cy + half_rect_size, cx - half_rect_size:cx + half_rect_size]
+                lims = (cy - half_rect_size, cx + half_rect_size, cy + half_rect_size, cx - half_rect_size)
+
+                #frame = frame.copy()[100:480, 100:800]
 
             #p1 = time.time()
             face = recognizer.find_face(frame)
             #print("First time:", time.time()- p1)
-            if face is None:
+            if face is None or face[0] < lims[0] or face[1] > lims[1] or face[2] > lims[2] or face[3] < lims[3]:
                 if capture.is_waiting:
                     capture.stop_waiting()
             else:
@@ -219,7 +222,7 @@ async def detector_thread():
                 try:
                     active_users = user_manager.get_all_active_users()
                     #p2 = time.time()
-                    encoding = recognizer.get_face_encoding(frame, (face,))
+                    encoding = recognizer.get_face_encoding(frame, (face, ))
                     #print("Second time:", time.time()- p2)
                     matching_index = recognizer.get_matching_encoding_index(encoding, [u.encoding for u in active_users])
 

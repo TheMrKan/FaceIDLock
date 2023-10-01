@@ -20,6 +20,7 @@ print([u.name for u in remote_users])'''
 
 img = face_recognition.load_image_file("img.png")
 print(img.shape)
+frame = frame[200:300, 200:300, :]
 enc = face_recognition.face_encodings(frame, model="large")
 print(enc)
 '''known_encodings_remote = [u.encoding for u in remote_users]
