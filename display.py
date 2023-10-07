@@ -120,7 +120,7 @@ class Display:
         else:
             nh = w / t_ratio
 
-        frame = cv2.flip(frame[int(h / 2 - nh / 2):int(h / 2 + nh / 2), int(w / 2 - nw / 2):int(w / 2 + nw / 2)], 1)
+        frame = frame[int(h / 2 - nh / 2):int(h / 2 + nh / 2), int(w / 2 - nw / 2):int(w / 2 + nw / 2)]
 
         frame = cv2.resize(frame, (cfg.DISPLAY_WIDTH, cfg.DISPLAY_HEIGHT))
 

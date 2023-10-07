@@ -32,6 +32,8 @@ class Capture:
     index: int
     direction: bool    # False - for entering; True - for exiting
     delay: float
+    flip_y: bool
+    flip_x: bool
 
     _source: cv2.VideoCapture
     _task: asyncio.Task
@@ -57,6 +59,9 @@ class Capture:
             self.delay = 0
         self._delay_started = None
 
+        self.flip_y = self.index in cfg.FLIP_Y
+        self.flip_x = self.index in cfg.FLIP_X
+
     def get_if_updated(self, reset_status: bool = True) -> [numpy.ndarray, None]:
         if self._is_updated:
             if reset_status:
@@ -77,6 +82,11 @@ class Capture:
             try:
                 ret, frame = await asyncio.get_event_loop().run_in_executor(None, self._source.read)
                 if ret:
+                    if self.flip_y:
+                        frame = cv2.flip(frame, 0)
+                    if self.flip_x:
+                        frame = cv2.flip(frame, 1)
+
                     self.current_frame = frame
 
                     if not self.direction:
@@ -125,10 +135,13 @@ class Capture:
 def get_available_captures() -> list:
     index = 0
     arr = []
+    streak = 0
     while True:
         cap = cv2.VideoCapture(index)
         if not cap.isOpened():
-            break
+            streak += 1
+            if streak > 5:
+                break
         else:
             capture = Capture(index, cap)
             arr.append(capture)
@@ -186,6 +199,7 @@ async def detector_thread():
     while True:
 
         for capture in captures:
+
             frame = capture.get_if_updated()
             if frame is None:
                 continue
@@ -206,15 +220,15 @@ async def detector_thread():
                     capture.stop_waiting()
             else:
                 #screen.recognizing()
-
-                if capture.is_waiting:
-                    if capture.is_delay_elapsed:
-                        capture.stop_waiting()
+                if capture.delay > 0:
+                    if capture.is_waiting:
+                        if capture.is_delay_elapsed:
+                            capture.stop_waiting()
+                        else:
+                            continue
                     else:
+                        capture.start_waiting()
                         continue
-                else:
-                    capture.start_waiting()
-                    continue
 
                 logger.info(f"Detected face on camera {capture.index}. Analizing...")
 
