@@ -52,7 +52,7 @@ class Capture:
 
         source.set(cv2.CAP_PROP_CONVERT_RGB, 1)
 
-        self.direction = self.index in cfg.EXIT_CAMERAS
+        self.direction = self._source.get(cv2.CAP_PROP_BACKLIGHT) == -1
         if self.index < len(cfg.DELAYS):
             self.delay = cfg.DELAYS[self.index]
         else:
