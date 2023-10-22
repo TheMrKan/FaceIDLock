@@ -20,10 +20,13 @@ else:
 class Recognizer:
 
     def __init__(self):
-        self.face_cascade = cv2.CascadeClassifier(cfg.CASCADE_PATH)
+        self.face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 
     def get_face_encoding(self, image: numpy.ndarray, bounds: list = None):
         encodings = recog.face_encodings(image, known_face_locations=bounds)
+
+        #cv2.imwrite("recog_img.png", image)
+
         if not encodings:
             raise NoFacesDetectedException
         return encodings[0]

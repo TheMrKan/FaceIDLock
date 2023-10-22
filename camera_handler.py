@@ -54,13 +54,13 @@ class Capture:
 
         self.direction = self._source.get(cv2.CAP_PROP_BACKLIGHT) == -1
         if self.index < len(cfg.DELAYS):
-            self.delay = cfg.DELAYS[self.index]
+            self.delay = cfg.DELAYS[self.direction]
         else:
             self.delay = 0
         self._delay_started = None
 
-        self.flip_y = self.index in cfg.FLIP_Y
-        self.flip_x = self.index in cfg.FLIP_X
+        self.flip_y = self.direction in cfg.FLIP_Y
+        self.flip_x = self.direction in cfg.FLIP_X
 
     def get_if_updated(self, reset_status: bool = True) -> [numpy.ndarray, None]:
         if self._is_updated:

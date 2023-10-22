@@ -7,7 +7,7 @@ def get_available_captures() -> list:
     while index < 50:
         cap = cv2.VideoCapture(index)
         if cap.isOpened():
-            print(cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT), )
+            print(cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT), cap.get(cv2.CAP_PROP_BACKLIGHT))
             arr.append(index)
 
         index += 1
