@@ -2,3 +2,5 @@ opencv-utils
 opencv-python~=4.7.0.68
 aiohttp~=3.8.4
 aiofiles~=23.1.0
+numpy
+face_recognition

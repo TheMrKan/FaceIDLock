@@ -77,6 +77,7 @@ class User:
 
 class UserManager:
 
+    LOAD_REMOTE_USERS_RETRY_INTERVAL = 5
     SYNC_INTERVAL_SECONDS = 30
 
     local_path: str
@@ -84,6 +85,8 @@ class UserManager:
     remote_address_update: str
     remote_address_init: str
     remote_users: list
+
+    remote_users_loaded_event: asyncio.Event
 
     recognizer: Any
 
@@ -93,6 +96,7 @@ class UserManager:
         self.remote_address_update = remote_address_update
         self.logger = logger
         self.recognizer = recognizer
+        self.remote_users_loaded_event = asyncio.Event()
 
         self.local_users = []
         self.remote_users = []
@@ -101,20 +105,27 @@ class UserManager:
             raise NotADirectoryError
 
     async def load_remote_users(self):
-        logger.debug(f"Requesting initial database state from the remote server: '{self.remote_address_init}'")
-        try:
-            remote_users = await api.request_users(self.remote_address_init)
-        except api.APIError as ex:
-            logger.error(
-                f"An API error occured during requesting initial database state.\nStatus code: {ex.response_code}\nResponse text: {ex.reponse_text}",
-                exc_info=ex)
-            return
-        except ConnectionError as ex:
-            logger.error(f"A connection error occured during requesting initial database state.", exc_info=ex)
-            return
-        except Exception as ex:
-            logger.critical("An unexpected error occured during requesting initial database state.", exc_info=ex)
-            return
+        self.remote_users_loaded_event.clear()
+
+        remote_users = []
+
+        while True:
+            logger.debug(f"Requesting initial database state from the remote server: '{self.remote_address_init}'")
+            try:
+                remote_users = await api.request_users(self.remote_address_init)
+                break
+            except api.APIError as ex:
+                logger.error(
+                    f"An API error occurred during requesting initial database state.\nStatus code: {ex.response_code}\nResponse text: {ex.reponse_text}",
+                    exc_info=ex)
+            except ConnectionError as ex:
+                logger.error(f"A connection error occurred during requesting initial database state.", exc_info=ex)
+            except Exception as ex:
+                logger.critical("An unexpected error occurred during requesting initial database state.", exc_info=ex)
+
+            await asyncio.sleep(UserManager.LOAD_REMOTE_USERS_RETRY_INTERVAL)
+            logger.info("Retrying loading remote users...")
+            continue
 
         logger.debug(f"Received {len(remote_users)} users from the remote server. Adding...")
         added = 0
@@ -125,6 +136,9 @@ class UserManager:
             except Exception as ex:
                 logger.error(f"Failed to add remote user {user.user_id}", exc_info=ex)
         logger.info(f"Successfully added {added} users from remote server")
+
+        self.remote_users_loaded_event.set()
+
 
     async def load_local_users(self):
         encoded_users_path = os.path.join(self.local_path, "encoded_users.json")
@@ -190,6 +204,8 @@ class UserManager:
     async def synchronization_coroutine(self):
         while True:
             await asyncio.sleep(UserManager.SYNC_INTERVAL_SECONDS)
+
+            await self.remote_users_loaded_event.wait()
 
             logger.debug(f"Requesting updates from remote server: '{self.remote_address_update}'")
             try:
