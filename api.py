@@ -61,14 +61,16 @@ async def request_users(url: str) -> list[RemoteUserData]:
                 raise await APIError.from_response("Failed status code", response)
             data = dict(await response.json())
             result = data.get("result", None)
+
             if result is None:
                 raise await APIError.from_response("Invalid response", response)
 
             result = []
             clients = json.loads(data.get("clients", "[]"))
+
             for client in clients:
                 try:
-                    remote_user = RemoteUserData(client["id"], client["fio"], client["encoding"])
+                    remote_user = RemoteUserData(client["id"], client["fio"], json.loads(client["encoding"]))
                     result.append(remote_user)
                 except KeyError:
                     continue

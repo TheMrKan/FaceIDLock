@@ -1,7 +1,6 @@
 import cv2
 import subprocess
 import os
-import tkinter
 import numpy as np
 import math
 
@@ -25,9 +24,7 @@ class Display:
 
         self.rect_color = self.DEFAULT_RECT_COLOR
         self.filling = 1
-        self.current_frame = None
-
-        self.tk = tkinter.Tk()
+        self.current_frame = np.zeros((350, 500, 3), dtype=np.uint8)
 
     def show_granted(self, refresh: bool = True):
         self.filling = 1

@@ -1,3 +1,5 @@
+import traceback
+
 import face_recognition as recog
 import cv2
 import numpy
@@ -55,7 +57,8 @@ class Recognizer:
     def get_matching_encoding_index(self, target_encoding: list, encodings: list):
         try:
             return recog.compare_faces(encodings, target_encoding, tolerance=0.5).index(True)
-        except ValueError:
+        except ValueError as ex:
+            traceback.print_exc()
             return -1
 
 
