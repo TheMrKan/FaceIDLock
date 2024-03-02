@@ -22,7 +22,7 @@ else:
 class Recognizer:
 
     def __init__(self):
-        self.face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_alt.xml")
+        self.face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 
     def get_face_encoding(self, image: numpy.ndarray, bounds: list = None):
         encodings = recog.face_encodings(image, known_face_locations=bounds)
@@ -58,7 +58,6 @@ class Recognizer:
         try:
             return recog.compare_faces(encodings, target_encoding, tolerance=0.5).index(True)
         except ValueError as ex:
-            traceback.print_exc()
             return -1
 
 
