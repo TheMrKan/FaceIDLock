@@ -22,10 +22,10 @@ else:
 class Recognizer:
 
     def __init__(self):
-        self.face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+        self.face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_alt.xml")
 
     def get_face_encoding(self, image: numpy.ndarray, bounds: list = None):
-        encodings = recog.face_encodings(image, known_face_locations=bounds)
+        encodings = recog.face_encodings(image, known_face_locations=bounds, num_jitters=5, model="large")
 
         #cv2.imwrite("recog_img.png", image)
 

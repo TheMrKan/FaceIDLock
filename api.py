@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-
 import requests
 import base64
 import numpy
@@ -10,6 +9,7 @@ from typing import Any
 from dataclasses import dataclass
 import json
 import asyncio
+from logger import logger
 
 
 class APIError(Exception):
@@ -72,7 +72,8 @@ async def request_users(url: str) -> list[RemoteUserData]:
                 try:
                     remote_user = RemoteUserData(client["id"], client["fio"], json.loads(client["encoding"]))
                     result.append(remote_user)
-                except KeyError:
+                except KeyError as ex:
+                    logger.error("Failed to parse client data", exc_info=ex)
                     continue
 
             return result

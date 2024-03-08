@@ -220,7 +220,9 @@ class UserManager:
                 logger.critical("An unexpected error occured during requesting remote updates.", exc_info=ex)
                 continue
 
-            logger.debug(f"Received {len(updates)} updates from the remote server. Applying...")
+            log_level_func = logger.info if len(updates) > 0 else logger.debug
+            log_level_func(f"Received {len(updates)} updates from the remote server. Applying...")
+
             applied = 0
             for update in updates:
                 if update.is_valid:
@@ -233,7 +235,7 @@ class UserManager:
 
                 if not update.is_valid:
                     logger.error("Skipping invalid remote update", exc_info=update.error)
-            logger.debug(f"Successfully applied {applied} valid updates")
+            log_level_func(f"Successfully applied {applied} valid updates")
 
     async def apply_remote_update(self, change: api.RemoteChange):
         if True:
