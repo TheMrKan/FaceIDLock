@@ -55,8 +55,15 @@ class Recognizer:
         return face
 
     def get_matching_encoding_index(self, target_encoding: list, encodings: list):
+        if not any(encodings):
+            return -1
+
+        compared = list(recog.face_distance(encodings, target_encoding))
+        m = min(compared)
+        if m > 0.5:
+            return -1
         try:
-            return recog.compare_faces(encodings, target_encoding, tolerance=0.5).index(True)
+            return compared.index(m)
         except ValueError as ex:
             return -1
 
